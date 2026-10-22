@@ -1,42 +1,14 @@
 import { NextResponse } from 'next/server'
 import { getAccessToken } from '@/lib/auth'
+import { fetchWithSystemCA } from '@/lib/fetch-helper'
 
-const DEVICE_ID = process.env.NEXT_PUBLIC_RING_DEVICE_ID
-const DEVICE_NAME = process.env.NEXT_PUBLIC_RING_DEVICE_NAME || 'Camera'
 const API_BASE = 'https://api.amazonvision.com'
 
 export async function GET() {
   try {
     const token = await getAccessToken()
 
-    // In access token mode, always auto-discover (ignore NEXT_PUBLIC_RING_DEVICE_ID)
-    const isAccessTokenMode = !!process.env.RING_ACCESS_TOKEN
-    const useConfiguredDevice = DEVICE_ID && !isAccessTokenMode
-
-    // If device ID is configured (refresh token mode only), use it directly
-    if (useConfiguredDevice) {
-      const statusRes = await fetch(`${API_BASE}/v1/devices/${DEVICE_ID}/status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-
-      let online = false
-      if (statusRes.ok) {
-        const statusData = await statusRes.json()
-        online = statusData?.data?.attributes?.online || false
-      }
-
-      return NextResponse.json({
-        devices: [{
-          id: DEVICE_ID,
-          name: DEVICE_NAME,
-          online,
-          capabilities: { motionDetection: true },
-        }],
-      })
-    }
-
-    // Auto-discover devices using the token
-    const res = await fetch(`${API_BASE}/v1/devices`, {
+    const res = await fetchWithSystemCA(`${API_BASE}/v1/devices`, {
       headers: { Authorization: `Bearer ${token}` },
     })
 
@@ -48,21 +20,22 @@ export async function GET() {
       )
     }
 
-    const data = await res.json()
+    const json = await res.json()
+    const devicesList = json?.data || []
 
-    // Normalize JSON:API response to simple device list
-    const devices = (data?.data || []).map((device: any) => ({
-      id: device.id,
-      name: device.attributes?.name || device.attributes?.description || 'Ring Device',
-      online: device.attributes?.online || false,
-      capabilities: device.attributes?.capabilities || {},
-    }))
+    const devices = Array.isArray(devicesList)
+      ? devicesList.map((d: any) => ({
+          id: d.id,
+          name: d.attributes?.name || 'Playground Device',
+          online: true,
+          capabilities: { motionDetection: true },
+        }))
+      : []
 
     return NextResponse.json({ devices })
   } catch (error) {
-    console.error('Devices error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch devices', devices: [] },
+      { devices: [], error: error instanceof Error ? error.message : 'Discovery failed' },
       { status: 500 }
     )
   }

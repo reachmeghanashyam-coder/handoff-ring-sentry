@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAccessToken } from '@/lib/auth'
+import { fetchWithSystemCA } from '@/lib/fetch-helper'
 
 const API_BASE = 'https://api.amazonvision.com'
 
@@ -11,19 +12,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing sdpOffer' }, { status: 400 })
     }
 
-    // Use deviceId from request body, fall back to env var
-    const resolvedDeviceId = deviceId || process.env.NEXT_PUBLIC_RING_DEVICE_ID
+    const token = await getAccessToken()
+
+    // If no device ID was provided, discover device first
+    let resolvedDeviceId = deviceId
+    if (!resolvedDeviceId) {
+      const devRes = await fetchWithSystemCA(`${API_BASE}/v1/devices`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (devRes.ok) {
+        const devData = await devRes.json()
+        if (devData.data && devData.data.length > 0) {
+          resolvedDeviceId = devData.data[0].id
+        }
+      }
+    }
+
     if (!resolvedDeviceId) {
       return NextResponse.json(
-        { error: 'No device ID provided. Pass deviceId in request body or set NEXT_PUBLIC_RING_DEVICE_ID.' },
+        { error: 'No Ring device discovered on this account.' },
         { status: 400 }
       )
     }
 
-    const token = await getAccessToken()
     const whepUrl = `${API_BASE}/v1/devices/${resolvedDeviceId}/media/streaming/whep/sessions`
 
-    const response = await fetch(whepUrl, {
+    const response = await fetchWithSystemCA(whepUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -61,13 +75,16 @@ export async function DELETE(request: NextRequest) {
     }
 
     const token = await getAccessToken()
-    await fetch(sessionUrl, {
+    await fetchWithSystemCA(sessionUrl, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     })
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to close session' }, { status: 500 })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Teardown failed' },
+      { status: 500 }
+    )
   }
 }

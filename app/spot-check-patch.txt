@@ -1,0 +1,25 @@
+                <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 flex flex-col justify-between overflow-hidden">
+                  <div>
+                    <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                      Spot Check
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-sm font-semibold text-white">
+                        {selectedTicket.placement.classification === 'SHELTERED' ? 'Under Cover' : 'Open Sidewalk'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-xs text-slate-400 mt-2 leading-relaxed">
+                    {selectedTicket.placement.hazardNotes.startsWith('Grounded to Ring History Event ID:') ? (
+                      <div className="flex flex-col gap-1">
+                        <span className="text-slate-300 font-medium">Grounded to Ring History Event:</span>
+                        <span className="font-mono text-[10px] text-sky-400/90 bg-slate-900 border border-slate-800 px-2 py-1 rounded truncate block" title={selectedTicket.placement.hazardNotes}>
+                          {selectedTicket.placement.hazardNotes.replace('Grounded to Ring History Event ID: ', '')}
+                        </span>
+                      </div>
+                    ) : (
+                      selectedTicket.placement.hazardNotes
+                    )}
+                  </div>
+                </div>
