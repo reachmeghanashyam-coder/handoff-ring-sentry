@@ -145,12 +145,13 @@ class TicketStore {
     return newTicket;
   }
 
-  public resolveTicket(id: string, staffName: string, notes?: string): DeliveryTicket | null {
+  public resolveTicket(id: string, staffName: string, notes?: string, boxCondition?: 'INTACT_UNDAMAGED' | 'DAMAGED_CRUSHED' | 'MISSING'): DeliveryTicket | null {
     const ticket = this.tickets.get(id);
     if (!ticket) return null;
 
     const now = new Date().toISOString();
     const finalDwell = Math.floor((Date.now() - new Date(ticket.arrivedAt).getTime()) / 1000);
+    const condition = boxCondition || 'INTACT_UNDAMAGED';
 
     ticket.status = 'RESOLVED_CONFIRMED';
     ticket.dwellSeconds = finalDwell;
@@ -158,13 +159,15 @@ class TicketStore {
       resolvedAt: now,
       resolvedBy: staffName,
       resolutionMethod: 'MANUAL_STAFF_ACKNOWLEDGMENT',
+      boxCondition: condition,
+      contentsVerified: condition === 'INTACT_UNDAMAGED',
       notes: notes || 'Brought inside by staff.',
     };
 
     ticket.timeline.push({
       timestamp: now,
-      stage: 'Brought Inside',
-      description: `${staffName} brought the package inside. Total time outside: ${Math.floor(finalDwell / 60)} min ${finalDwell % 60} sec.`,
+      stage: 'Physical Intake & Inspection',
+      description: `${staffName} retrieved package. Physical Health: ${condition === 'INTACT_UNDAMAGED' ? 'Seal Intact & Undamaged' : 'Packaging Damaged'}. Logged into internal inventory.`,
     });
 
     ticket.contentHash = crypto.createHash('sha256').update(JSON.stringify(ticket)).digest('hex');

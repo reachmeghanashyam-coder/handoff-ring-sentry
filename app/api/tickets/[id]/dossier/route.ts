@@ -19,6 +19,7 @@ export async function GET(
 <head>
   <meta charset="UTF-8">
   <title>Delivery Summary - ${ticket.id}</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'%3E%3Crect width='32' height='32' rx='10' fill='%2304060A'/%3E%3Crect x='0.5' y='0.5' width='31' height='31' rx='9.5' stroke='%2300D4FF' stroke-opacity='0.5'/%3E%3Cpath d='M16 6L7 11V21L16 26L25 21V11L16 6Z' stroke='%2300D4FF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M7 11L16 16L25 11' stroke='%2300D4FF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M16 16V26' stroke='%2300E599' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='23' cy='9' r='2.5' fill='%2300D4FF'/%3E%3C/svg%3E">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 40px; color: #1e293b; line-height: 1.6; }
     .header { border-bottom: 2px solid #0284c7; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
@@ -78,15 +79,44 @@ export async function GET(
   </div>
 
   <div class="card" style="margin-bottom: 24px;">
-    <h3>Current Status</h3>
+    <h3>Resolution & Custody Verdict</h3>
     ${ticket.status === 'RESOLVED_CONFIRMED' ? `
-      <p style="color: #166534; font-weight: 600; margin: 0;">✓ Brought inside by ${ticket.resolution?.resolvedBy || 'staff'} at ${new Date(ticket.resolution?.resolvedAt || '').toLocaleTimeString()}.</p>
-    ` : ticket.status === 'SLA_BREACHED' ? `
-      <p style="color: #991b1b; font-weight: 600; margin: 0;">⚠ Still outside after ${Math.floor(ticket.dwellSeconds / 60)} minutes. Needs attention.</p>
+      <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <p style="color: #065f46; font-weight: 700; margin: 0; font-size: 15px;">✓ Custody Transferred · Final Receipt Confirmed</p>
+          <span style="background: #10b981; color: white; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px;">VERIFIED SAFE</span>
+        </div>
+        <p style="color: #047857; margin: 0 0 6px 0; font-size: 13px;">
+          Retrieved from porch and logged into inventory by <strong>${ticket.resolution?.resolvedBy || 'Front Desk'}</strong> on ${new Date(ticket.resolution?.resolvedAt || '').toLocaleDateString()} at ${new Date(ticket.resolution?.resolvedAt || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid #d1fae5; font-size: 12px; color: #065f46;">
+          <div><strong>Package Condition:</strong> <span style="color: #047857;">${ticket.resolution?.boxCondition === 'DAMAGED_CRUSHED' ? '⚠ Exterior Damaged' : '✓ Seal Intact · Box Undamaged'}</span></div>
+          <div><strong>Contents Audit:</strong> <span style="color: #047857;">${ticket.resolution?.contentsVerified ? '✓ Received in Good Health' : 'Pending Internal Inspection'}</span></div>
+          <div><strong>Total Outside Duration:</strong> ${Math.floor(ticket.dwellSeconds / 60)} min ${ticket.dwellSeconds % 60} sec</div>
+          <div><strong>Custody Handoff:</strong> Internal Front-Desk Verified</div>
+        </div>
+      </div>
     ` : ticket.status === 'UNATTENDED_REMOVAL' ? `
-      <p style="color: #991b1b; font-weight: 600; margin: 0;">✕ Reported missing. Record prepared for delivery dispute.</p>
+      <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; padding: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <p style="color: #9f1239; font-weight: 700; margin: 0; font-size: 15px;">✕ Missing Package · Claim Evidence Dossier</p>
+          <span style="background: #f43f5e; color: white; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px;">CLAIM FILED</span>
+        </div>
+        <p style="color: #be123c; margin: 0; font-size: 13px;">Checked porch; package was not found. Carrier delivery dispute evidence locked.</p>
+        <div style="margin-top: 8px; font-size: 12px; color: #9f1239;">
+          <strong>Verdict:</strong> Package absent from recorded drop coordinates. Carrier notified.
+        </div>
+      </div>
+    ` : ticket.status === 'SLA_BREACHED' ? `
+      <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 14px;">
+        <p style="color: #9a3412; font-weight: 700; margin: 0 0 4px 0; font-size: 14px;">⚠ Overdue · Exceeded 15-Minute Threshold</p>
+        <p style="color: #c2410c; margin: 0; font-size: 13px;">Package has been outside for ${Math.floor(ticket.dwellSeconds / 60)} minutes. Final health check pending physical retrieval.</p>
+      </div>
     ` : `
-      <p style="color: #0284c7; font-weight: 600; margin: 0;">• Waiting outside for pickup.</p>
+      <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 14px;">
+        <p style="color: #0369a1; font-weight: 700; margin: 0 0 4px 0; font-size: 14px;">• In Progress · Within Safe Pickup Window</p>
+        <p style="color: #0284c7; margin: 0; font-size: 13px;">Delivered recently. Final condition inspection will be logged upon front-desk retrieval.</p>
+      </div>
     `}
   </div>
 

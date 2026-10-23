@@ -36,6 +36,8 @@ export interface DeliveryTicket {
     resolvedBy: string;
     resolutionMethod: 'MANUAL_STAFF_ACKNOWLEDGMENT' | 'EXCEPTION_REPORTED';
     notes?: string;
+    boxCondition?: 'INTACT_UNDAMAGED' | 'DAMAGED_CRUSHED' | 'MISSING';
+    contentsVerified?: boolean;
   };
   timeline: TimelineEvent[];
   contentHash?: string;           // Cryptographic hash for provenance audit

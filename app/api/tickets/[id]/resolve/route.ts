@@ -20,7 +20,7 @@ export async function POST(
       return NextResponse.json({ error: 'Staff name is required to confirm physical custody' }, { status: 400 });
     }
 
-    const ticket = ticketStore.resolveTicket(id, staffName, notes);
+    const ticket = ticketStore.resolveTicket(id, staffName, notes, body.boxCondition);
     if (!ticket) return NextResponse.json({ error: 'Ticket not found' }, { status: 404 });
 
     return NextResponse.json({ ticket });
