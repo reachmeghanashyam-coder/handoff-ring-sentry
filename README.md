@@ -2,6 +2,7 @@
 
 > **Build, Ship, Shape: Amazon Developer Hackathon 2026**  
 > **Track:** Ring Track ($12,000) & AWS Builder Mini-Challenge ($5,000)  
+> **Live Demo:** [https://handoff-ring-sentry.vercel.app](https://handoff-ring-sentry.vercel.app)  
 > **Demo Video:** [https://youtu.be/gq-Mb7Lw88I](https://youtu.be/gq-Mb7Lw88I)
 
 ---
